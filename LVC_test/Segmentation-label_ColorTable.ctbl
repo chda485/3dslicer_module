@@ -1,0 +1,5 @@
+# Color table file /home/asmdot/Desktop/LVC_test/Segmentation-label_ColorTable.ctbl
+# 3 values
+0 Background 0 0 0 0
+1 Segment_1 128 174 128 255
+2 Segment_2 241 214 145 255
