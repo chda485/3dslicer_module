@@ -1,8 +1,14 @@
+import os
+import sys
+
 from PyQt5 import QtWidgets
-import nrrd, cv2, sys
+import cv2
+import nrrd
 import matplotlib.image as img_reader
 import numpy as np
-import os, form, module_v
+
+import form
+import module_v
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -16,7 +22,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.estimate_button.clicked.connect(self.make_estimate)
         self.ui.exit_button.clicked.connect(self.close)
         self.ui.viz_button.clicked.connect(self.make_vizualization)
-        self.ui.label.setFocus()
         
     def make_estimate(self):
         file = nrrd.read('Segmentation-label.nrrd', index_order='C')
@@ -47,24 +52,28 @@ class MainWindow(QtWidgets.QMainWindow):
             fat_structure = np.count_nonzero(out) // 3
             if place != 0:
                 fat_str.append(fat_structure / place)
-            else: fat_str.append(0)
+            else:
+                fat_str.append(0)
+
         self.percents = np.asarray(fat_str)
         self.slices = np.asarray(outs)
         self.initials = np.asarray(back)
         result = np.around(np.mean(self.percents) * 100, 2)
-        self.ui.results.append("Percents is {}%".format(result))
+        self.ui.results.setText(f"Степень поражения {result} %")
         os.remove('slice.png')
         os.remove('initial.png')
         
     def make_vizualization(self):
-        if self.initials is None or self.slices is None or self.percents is None:
+        if any([self.initials is None, self.slices is None, self.percents is None]):
             QtWidgets.QMessageBox.critical(self, "Error",
                                            "Отсутствуют данные для выполнения визуализации!",
                                            defaultButton=QtWidgets.QMessageBox.Ok)
             return
         self.viz_window = module_v.Example(self.initials, self.slices, self.percents)
+
         self.viz_window.show()
-        
+
+
 app = QtWidgets.QApplication(sys.argv)
 win = MainWindow()
 win.show()
