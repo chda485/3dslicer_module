@@ -41,8 +41,9 @@ class MainWindow(QtWidgets.QMainWindow):
             slice_[slice_[:,:,0:3] != 255] = 0
             
             kernel = np.full((3, 3), 255)
-            out = cv2.erode(slice_, kernel, iterations=1)
-            out = cv2.dilate(out, kernel, iterations=1)
+            out = slice_
+            out = cv2.erode(out, kernel, iterations=2)
+            out = cv2.dilate(out, kernel, iterations=2)
             outs.append(out)
             fat_structure = np.count_nonzero(out) // 3
             if place != 0:
@@ -55,7 +56,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.results.append("Percents is {}%".format(result))
         os.remove('slice.png')
         os.remove('initial.png')
-        
+       
     def make_vizualization(self):
         if self.initials is None or self.slices is None or self.percents is None:
             QtWidgets.QMessageBox.critical(self, "Error",

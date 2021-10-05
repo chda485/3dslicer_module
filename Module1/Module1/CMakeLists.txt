@@ -21,6 +21,7 @@ include(${Slicer_USE_FILE})
 # Extension modules
 add_subdirectory(M1)
 add_subdirectory(M2)
+add_subdirectory(M2)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

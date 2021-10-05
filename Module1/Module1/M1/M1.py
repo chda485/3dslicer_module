@@ -150,7 +150,10 @@ class M1Widget(ScriptedLoadableModuleWidget):
             app = qt.QApplication
             window = VizualizeWin(back, slices, fat_s)
             window.show()
-            sys.exit(app.exec_())
+            try:
+                sys.exit(app.exec_())
+            except:
+                print("error")
         except:
             (type_e, value, trace) = sys.exc_info()
             print(sys.excepthook(type_e, value, trace))
