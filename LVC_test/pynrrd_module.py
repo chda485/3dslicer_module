@@ -7,6 +7,8 @@ import numpy as np
 import os
 import form
 import module_v
+from PIL import Image, ImageOps, ImageEnhance
+from PIL.ImageQt import ImageQt
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -22,7 +24,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.exit_button.clicked.connect(self.close)
         self.ui.viz_button.clicked.connect(self.make_vizualization)
         self.ui.label.setFocus()
-        
+
+    def make_image_from_hu(self, hu):
+        image = (np.maximum(hu, 0) / hu.max()) * 255.0
+        image = np.uint8(image)
+        return image
+
     def make_estimate(self):
         #загружаем массивы слайсов из nrrd-файлов
         file = nrrd.read('Segmentation-label.nrrd', index_order='C')
@@ -39,21 +46,22 @@ class MainWindow(QtWidgets.QMainWindow):
             init_slice = initial[i]
             init_slice[init_slice < -1200] = np.amin(initial)
             init_slice[init_slice > 0] = np.amax(initial)
-            #сохранаяем слайсы в картинки для обработки через open-cv
-            imsave('slice.png', img)
-            imsave('initial.png', initial[i])
-            slice_ = cv2.imread('slice.png')
-            image = cv2.imread('initial.png')
+
+            print("init {}".format(i))
+            image = self.make_image_from_hu(init_slice)
             back.append(image)
-            
+
+            print("slice {}".format(i))
+            #img = img.astype(float)
+            slice_ = self.make_image_from_hu(img)
             #делаем черными все пиксели не из зоны интереса (пиксель [0][0][0] черный)
-            slice_[slice_[:,:,0] == slice_[0][0][0]] = 0
+            slice_[slice_ == slice_[0][0]] = 0
             #подсчитываем общую площадь области интереса
-            place = np.count_nonzero(slice_) // 3
+            place = np.count_nonzero(slice_)
             #делаем самые толстые структуры, выделенные яркими, белыми
-            slice_[slice_[:,:,1] == slice_[:,:,1].max()] = 255
+            slice_[slice_ == slice_.max()] = 255
             #делаем все не белое черным
-            slice_[slice_[:,:,0:3] != 255] = 0
+            slice_[slice_ != 255] = 0
             #создаем ядро 3х3 заполненное значением белого цвета
             kernel = np.full((3, 3), 255)
             #проводим по две итерации эрозии и дилатации
@@ -62,7 +70,7 @@ class MainWindow(QtWidgets.QMainWindow):
             outs.append(out)
             #считаем процесс поражения через подсчёт числа оставшихся белых пикселей
             #на 3 делим так как у одного пикселя 3 значения (RGB)
-            fat_structure = np.count_nonzero(out) // 3
+            fat_structure = np.count_nonzero(out)
             #если на срезе вообще что-то есть
             if place != 0:
                 fat_str.append(fat_structure / place)
@@ -72,8 +80,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initials = np.asarray(back)
         result = np.around(np.mean(self.percents) * 100, 2)
         self.ui.results.append("Percents is {}%".format(result))
-        os.remove('slice.png')
-        os.remove('initial.png')
        
     def make_vizualization(self):
         if any([self.initials is None, self.slices is None, self.percents is None]):
